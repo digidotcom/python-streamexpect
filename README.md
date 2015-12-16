@@ -1,6 +1,8 @@
 streamexpect
 ============
 
+[![Build Status](https://travis-ci.org/digidotcom/python-streamexpect.svg?branch=master)](https://travis-ci.org/digidotcom/python-streamexpect)
+
 streamexpect is a library providing cross-platform "expect-like" functionality
 for generic Python streams and sockets . It is similar to the
 [Pexpect](https://pexpect.readthedocs.org>) library, except where Pexpect

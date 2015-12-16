@@ -1,0 +1,25 @@
+language: python
+
+# Version of Python used to run tox
+python: 3.5
+
+# tox environments to run
+env:
+  - TOX_ENV=py27
+  - TOX_ENV=py33
+  - TOX_ENV=py34
+  - TOX_ENV=py35
+  - TOX_ENV=pypy
+  - TOX_ENV=pypy3
+  - TOX_ENV=docs
+  - TOX_ENV=style
+
+# Prep and run build
+install:
+  - pip install tox
+
+script:
+  - tox -e $TOX_ENV
+
+# Allow Travis to use container-based infrastructure
+sudo: false
