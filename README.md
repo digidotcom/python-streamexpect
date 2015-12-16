@@ -4,6 +4,7 @@ streamexpect
 [![Build Status](https://travis-ci.org/digidotcom/python-streamexpect.svg?branch=master)](https://travis-ci.org/digidotcom/python-streamexpect)
 [![Coverage Status](https://img.shields.io/coveralls/digidotcom/python-streamexpect.svg)](https://coveralls.io/r/digidotcom/python-streamexpect)
 [![Code Climate](https://img.shields.io/codeclimate/github/digidotcom/python-streamexpect.svg)](https://codeclimate.com/github/digidotcom/python-streamexpect)
+[![GitHub Issues](https://img.shields.io/github/issues/digidotcom/python-streamexpect.svg)](https://github.com/digi.com/python-streamexpect/issues)
 
 streamexpect is a library providing cross-platform "expect-like" functionality
 for generic Python streams and sockets . It is similar to the
