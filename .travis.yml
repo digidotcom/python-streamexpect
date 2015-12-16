@@ -11,6 +11,7 @@ env:
   - TOX_ENV=py35
   - TOX_ENV=pypy
   - TOX_ENV=pypy3
+  - TOX_ENV=coverage
   - TOX_ENV=docs
   - TOX_ENV=style
 
