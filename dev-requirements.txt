@@ -1,0 +1,4 @@
+flake8
+mccabe
+pep8-naming
+sphinx
