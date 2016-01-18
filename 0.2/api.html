@@ -1,0 +1,937 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>API Documentation &mdash; streamexpect 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="streamexpect 0.2.0 documentation" href="index.html" />
+    <link rel="prev" title="Getting Started" href="getting_started.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="api-documentation">
+<h1><a class="toc-backref" href="#id1">API Documentation</a><a class="headerlink" href="#api-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="table-of-contents">
+<p class="topic-title first">Table of Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#api-documentation" id="id1">API Documentation</a><ul>
+<li><a class="reference internal" href="#functions" id="id2">Functions</a></li>
+<li><a class="reference internal" href="#expecter-types" id="id3">Expecter Types</a></li>
+<li><a class="reference internal" href="#searcher-types" id="id4">Searcher Types</a></li>
+<li><a class="reference internal" href="#match-types" id="id5">Match types</a></li>
+<li><a class="reference internal" href="#streamadapter-types" id="id6">StreamAdapter Types</a></li>
+<li><a class="reference internal" href="#exceptions" id="id7">Exceptions</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="functions">
+<h2><a class="toc-backref" href="#id2">Functions</a><a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#streamexpect.wrap" title="streamexpect.wrap"><code class="xref py py-obj docutils literal"><span class="pre">wrap</span></code></a>(stream[,&nbsp;unicode,&nbsp;window,&nbsp;echo,&nbsp;...])</td>
+<td>Wrap a stream to implement expect functionality.</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="streamexpect.wrap">
+<code class="descclassname">streamexpect.</code><code class="descname">wrap</code><span class="sig-paren">(</span><em>stream</em>, <em>unicode=False</em>, <em>window=1024</em>, <em>echo=False</em>, <em>close_stream=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#wrap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.wrap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrap a stream to implement expect functionality.</p>
+<p>This function provides a convenient way to wrap any Python stream (a
+file-like object) or socket with an appropriate <a class="reference internal" href="#streamexpect.Expecter" title="streamexpect.Expecter"><code class="xref py py-class docutils literal"><span class="pre">Expecter</span></code></a> class for
+the stream type. The returned object adds an <code class="xref py py-func docutils literal"><span class="pre">Expect.expect()</span></code> method
+to the stream, while passing normal stream functions like <em>read</em>/<em>recv</em>
+and <em>write</em>/<em>send</em> through to the underlying stream.</p>
+<p>Here&#8217;s an example of opening and wrapping a pair of network sockets:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">streamexpect</span>
+
+<span class="n">source</span><span class="p">,</span> <span class="n">drain</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socketpair</span><span class="p">()</span>
+<span class="n">expecter</span> <span class="o">=</span> <span class="n">streamexpect</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">drain</span><span class="p">)</span>
+<span class="n">source</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;this is a test&#39;</span><span class="p">)</span>
+<span class="n">match</span> <span class="o">=</span> <span class="n">expecter</span><span class="o">.</span><span class="n">expect_bytes</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">match</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>stream</strong> &#8211; The stream/socket to wrap.</li>
+<li><strong>unicode</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; If <code class="docutils literal"><span class="pre">True</span></code>, the wrapper will be configured for
+Unicode matching, otherwise matching will be done on binary.</li>
+<li><strong>window</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Historical characters to buffer.</li>
+<li><strong>echo</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; If <code class="docutils literal"><span class="pre">True</span></code>, echoes received characters to stdout.</li>
+<li><strong>close_stream</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; If <code class="docutils literal"><span class="pre">True</span></code>, and the wrapper is used as a context
+manager, closes the stream at the end of the context manager.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="expecter-types">
+<h2><a class="toc-backref" href="#id3">Expecter Types</a><a class="headerlink" href="#expecter-types" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#streamexpect.Expecter" title="streamexpect.Expecter"><code class="xref py py-obj docutils literal"><span class="pre">Expecter</span></code></a>(stream_adapter,&nbsp;input_callback,&nbsp;...)</td>
+<td>Base class for consuming input and waiting for a pattern to appear.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#streamexpect.BytesExpecter" title="streamexpect.BytesExpecter"><code class="xref py py-obj docutils literal"><span class="pre">BytesExpecter</span></code></a>(stream_adapter[,&nbsp;...])</td>
+<td><a class="reference internal" href="#streamexpect.Expecter" title="streamexpect.Expecter"><code class="xref py py-class docutils literal"><span class="pre">Expecter</span></code></a> interface for searching a byte-oriented stream.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#streamexpect.TextExpecter" title="streamexpect.TextExpecter"><code class="xref py py-obj docutils literal"><span class="pre">TextExpecter</span></code></a>(stream_adapter[,&nbsp;...])</td>
+<td><a class="reference internal" href="#streamexpect.Expecter" title="streamexpect.Expecter"><code class="xref py py-class docutils literal"><span class="pre">Expecter</span></code></a> interface for searching a text-oriented stream.</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="streamexpect.Expecter">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">Expecter</code><span class="sig-paren">(</span><em>stream_adapter</em>, <em>input_callback</em>, <em>window</em>, <em>close_adapter</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#Expecter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.Expecter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for consuming input and waiting for a pattern to appear.</p>
+<p>Implements the base class for <em>Expecter</em> types, which wrap over a
+<a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><code class="xref py py-class docutils literal"><span class="pre">StreamAdapter</span></code></a> type and provide methods for applying a
+<a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><code class="xref py py-class docutils literal"><span class="pre">Searcher</span></code></a> to the received data. Any attributes not part of this
+class are delegated to the underlying <a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><code class="xref py py-class docutils literal"><span class="pre">StreamAdapter</span></code></a> type.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>stream_adapter</strong> (<a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><em>StreamAdapter</em></a>) &#8211; The <a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><code class="xref py py-class docutils literal"><span class="pre">StreamAdapter</span></code></a> object
+to receive data from.</li>
+<li><strong>input_callback</strong> (<em>function</em>) &#8211; Callback function with one parameter
+that is called each time new data is read from the
+<em>stream_adapter</em>.</li>
+<li><strong>window</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Number of historical objects (bytes, characters,
+etc.) to buffer.</li>
+<li><strong>close_adapter</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; If <code class="docutils literal"><span class="pre">True</span></code>, and the Expecter is used as a
+context manager, closes the adapter at the end of the context
+manager.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="streamexpect.Expecter.expect">
+<code class="descname">expect</code><span class="sig-paren">(</span><em>searcher</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#Expecter.expect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.Expecter.expect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply <em>searcher</em> to underlying <a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><code class="xref py py-class docutils literal"><span class="pre">StreamAdapter</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>searcher</strong> (<a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><em>Searcher</em></a>) &#8211; <a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><code class="xref py py-class docutils literal"><span class="pre">Searcher</span></code></a> to apply to underlying
+stream.</li>
+<li><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Timeout in seconds.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="streamexpect.BytesExpecter">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">BytesExpecter</code><span class="sig-paren">(</span><em>stream_adapter</em>, <em>input_callback=None</em>, <em>window=1024</em>, <em>close_adapter=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#BytesExpecter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.BytesExpecter" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#streamexpect.Expecter" title="streamexpect.Expecter"><code class="xref py py-class docutils literal"><span class="pre">Expecter</span></code></a> interface for searching a byte-oriented stream.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>stream_adapter</strong> (<a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><em>StreamAdapter</em></a>) &#8211; The <a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><code class="xref py py-class docutils literal"><span class="pre">StreamAdapter</span></code></a> object
+to receive data from.</li>
+<li><strong>input_callback</strong> (<em>function</em>) &#8211; Callback function with one parameter
+that is called each time new data is read from the
+<em>stream_adapter</em>.</li>
+<li><strong>window</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Number of historical bytes to buffer.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="streamexpect.BytesExpecter.expect">
+<code class="descname">expect</code><span class="sig-paren">(</span><em>searcher</em>, <em>timeout=3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#BytesExpecter.expect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.BytesExpecter.expect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for input matching <em>searcher</em></p>
+<p>Waits for input matching <em>searcher</em> for up to <em>timeout</em> seconds. If
+a match is found, the match result is returned (the specific type of
+returned result depends on the <a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><code class="xref py py-class docutils literal"><span class="pre">Searcher</span></code></a> type). If no match is
+found within <em>timeout</em> seconds, raise an <a class="reference internal" href="#streamexpect.ExpectTimeout" title="streamexpect.ExpectTimeout"><code class="xref py py-class docutils literal"><span class="pre">ExpectTimeout</span></code></a>
+exception.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>searcher</strong> (<a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><em>Searcher</em></a>) &#8211; <a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><code class="xref py py-class docutils literal"><span class="pre">Searcher</span></code></a> to apply to underlying
+stream.</li>
+<li><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Timeout in seconds.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="streamexpect.BytesExpecter.expect_bytes">
+<code class="descname">expect_bytes</code><span class="sig-paren">(</span><em>b</em>, <em>timeout=3</em><span class="sig-paren">)</span><a class="headerlink" href="#streamexpect.BytesExpecter.expect_bytes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for a match to the bytes in <em>b</em> to appear on the stream.</p>
+<p>Waits for input matching the bytes <em>b</em> for up to <em>timeout</em> seconds.
+If a match is found, a <a class="reference internal" href="#streamexpect.SequenceMatch" title="streamexpect.SequenceMatch"><code class="xref py py-class docutils literal"><span class="pre">SequenceMatch</span></code></a> result is returned.  If
+no match is found within <em>timeout</em> seconds, raise an
+<a class="reference internal" href="#streamexpect.ExpectTimeout" title="streamexpect.ExpectTimeout"><code class="xref py py-class docutils literal"><span class="pre">ExpectTimeout</span></code></a> exception.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>b</strong> &#8211; The byte pattern to search for.</li>
+<li><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Timeout in seconds.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#streamexpect.SequenceMatch" title="streamexpect.SequenceMatch"><code class="xref py py-class docutils literal"><span class="pre">SequenceMatch</span></code></a> if matched, None if no match was found.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="streamexpect.BytesExpecter.expect_regex">
+<code class="descname">expect_regex</code><span class="sig-paren">(</span><em>pattern</em>, <em>timeout=3</em>, <em>regex_options=0</em><span class="sig-paren">)</span><a class="headerlink" href="#streamexpect.BytesExpecter.expect_regex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for a match to the regex in <em>pattern</em> to appear on the stream.</p>
+<p>Waits for input matching the regex <em>pattern</em> for up to <em>timeout</em>
+seconds. If a match is found, a <a class="reference internal" href="#streamexpect.RegexMatch" title="streamexpect.RegexMatch"><code class="xref py py-class docutils literal"><span class="pre">RegexMatch</span></code></a> result is returned.
+If no match is found within <em>timeout</em> seconds, raise an
+<a class="reference internal" href="#streamexpect.ExpectTimeout" title="streamexpect.ExpectTimeout"><code class="xref py py-class docutils literal"><span class="pre">ExpectTimeout</span></code></a> exception.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pattern</strong> &#8211; The pattern to search for, as a single compiled regex
+or a string that will be processed as a regex.</li>
+<li><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Timeout in seconds.</li>
+<li><strong>regex_options</strong> &#8211; Options passed to the regex engine.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#streamexpect.RegexMatch" title="streamexpect.RegexMatch"><code class="xref py py-class docutils literal"><span class="pre">RegexMatch</span></code></a> if matched, None if no match was found.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="streamexpect.TextExpecter">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">TextExpecter</code><span class="sig-paren">(</span><em>stream_adapter</em>, <em>input_callback=None</em>, <em>window=1024</em>, <em>close_adapter=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#TextExpecter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.TextExpecter" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#streamexpect.Expecter" title="streamexpect.Expecter"><code class="xref py py-class docutils literal"><span class="pre">Expecter</span></code></a> interface for searching a text-oriented stream.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>stream_adapter</strong> (<a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><em>StreamAdapter</em></a>) &#8211; The <a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><code class="xref py py-class docutils literal"><span class="pre">StreamAdapter</span></code></a> object
+to receive data from.</li>
+<li><strong>input_callback</strong> (<em>function</em>) &#8211; Callback function with one parameter
+that is called each time new data is read from the
+<em>stream_adapter</em>.</li>
+<li><strong>window</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Number of historical characters to buffer.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="streamexpect.TextExpecter.expect">
+<code class="descname">expect</code><span class="sig-paren">(</span><em>searcher</em>, <em>timeout=3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#TextExpecter.expect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.TextExpecter.expect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for input matching <em>searcher</em>.</p>
+<p>Waits for input matching <em>searcher</em> for up to <em>timeout</em> seconds. If
+a match is found, the match result is returned (the specific type of
+returned result depends on the <a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><code class="xref py py-class docutils literal"><span class="pre">Searcher</span></code></a> type). If no match is
+found within <em>timeout</em> seconds, raise an <a class="reference internal" href="#streamexpect.ExpectTimeout" title="streamexpect.ExpectTimeout"><code class="xref py py-class docutils literal"><span class="pre">ExpectTimeout</span></code></a>
+exception.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>searcher</strong> (<a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><em>Searcher</em></a>) &#8211; <a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><code class="xref py py-class docutils literal"><span class="pre">Searcher</span></code></a> to apply to underlying
+stream.</li>
+<li><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Timeout in seconds.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="streamexpect.TextExpecter.expect_regex">
+<code class="descname">expect_regex</code><span class="sig-paren">(</span><em>pattern</em>, <em>timeout=3</em>, <em>regex_options=0</em><span class="sig-paren">)</span><a class="headerlink" href="#streamexpect.TextExpecter.expect_regex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for a match to the regex in <em>pattern</em> to appear on the stream.</p>
+<p>Waits for input matching the regex <em>pattern</em> for up to <em>timeout</em>
+seconds. If a match is found, a <a class="reference internal" href="#streamexpect.RegexMatch" title="streamexpect.RegexMatch"><code class="xref py py-class docutils literal"><span class="pre">RegexMatch</span></code></a> result is returned.
+If no match is found within <em>timeout</em> seconds, raise an
+<a class="reference internal" href="#streamexpect.ExpectTimeout" title="streamexpect.ExpectTimeout"><code class="xref py py-class docutils literal"><span class="pre">ExpectTimeout</span></code></a> exception.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pattern</strong> &#8211; The pattern to search for, as a single compiled regex
+or a string that will be processed as a regex.</li>
+<li><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Timeout in seconds.</li>
+<li><strong>regex_options</strong> &#8211; Options passed to the regex engine.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#streamexpect.RegexMatch" title="streamexpect.RegexMatch"><code class="xref py py-class docutils literal"><span class="pre">RegexMatch</span></code></a> if matched, None if no match was found.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="streamexpect.TextExpecter.expect_text">
+<code class="descname">expect_text</code><span class="sig-paren">(</span><em>text</em>, <em>timeout=3</em><span class="sig-paren">)</span><a class="headerlink" href="#streamexpect.TextExpecter.expect_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for a match to the text in <em>text</em> to appear on the stream.</p>
+<p>Waits for input matching the text <em>text</em> for up to <em>timeout</em>
+seconds. If a match is found, a <a class="reference internal" href="#streamexpect.SequenceMatch" title="streamexpect.SequenceMatch"><code class="xref py py-class docutils literal"><span class="pre">SequenceMatch</span></code></a> result is
+returned.  If no match is found within <em>timeout</em> seconds, raise an
+<a class="reference internal" href="#streamexpect.ExpectTimeout" title="streamexpect.ExpectTimeout"><code class="xref py py-class docutils literal"><span class="pre">ExpectTimeout</span></code></a> exception.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>text</strong> &#8211; The plain-text pattern to search for.</li>
+<li><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Timeout in seconds.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#streamexpect.SequenceMatch" title="streamexpect.SequenceMatch"><code class="xref py py-class docutils literal"><span class="pre">SequenceMatch</span></code></a> if matched, None if no match was found.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="searcher-types">
+<h2><a class="toc-backref" href="#id4">Searcher Types</a><a class="headerlink" href="#searcher-types" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><code class="xref py py-obj docutils literal"><span class="pre">Searcher</span></code></a></td>
+<td>Base class for searching buffers.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#streamexpect.BytesSearcher" title="streamexpect.BytesSearcher"><code class="xref py py-obj docutils literal"><span class="pre">BytesSearcher</span></code></a>(b)</td>
+<td>Binary/ASCII searcher.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#streamexpect.TextSearcher" title="streamexpect.TextSearcher"><code class="xref py py-obj docutils literal"><span class="pre">TextSearcher</span></code></a>(text)</td>
+<td>Plain text searcher.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#streamexpect.RegexSearcher" title="streamexpect.RegexSearcher"><code class="xref py py-obj docutils literal"><span class="pre">RegexSearcher</span></code></a>(pattern[,&nbsp;regex_options])</td>
+<td>Regular expression searcher.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#streamexpect.SearcherCollection" title="streamexpect.SearcherCollection"><code class="xref py py-obj docutils literal"><span class="pre">SearcherCollection</span></code></a>(*searchers)</td>
+<td>Collect multiple <cite>Searcher</cite> objects into one.</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="streamexpect.Searcher">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">Searcher</code><a class="reference internal" href="_modules/streamexpect.html#Searcher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.Searcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for searching buffers.</p>
+<p>Implements the base class for <em>Searcher</em> types, which are used by the
+library to determine whether or not a particular buffer contains a <em>match</em>.
+The type of the match is determined by the <em>Searcher</em> implementation: it
+may be bytes, text, or something else entirely.</p>
+<p>To conform to the <em>Searcher</em> interface, a class must implement one method
+<em>search</em> and one read-only property <em>match_type</em>. The buffer passed to
+the <em>search</em> method must match the type returned by the <em>match_type</em>
+property, and <em>search</em> must raise a <cite>TypeError</cite> if it does not. The
+member function <a class="reference internal" href="#streamexpect.Searcher._check_type" title="streamexpect.Searcher._check_type"><code class="xref py py-func docutils literal"><span class="pre">_check_type()</span></code></a> exists to provide this functionality
+for subclass implementations.</p>
+<dl class="method">
+<dt id="streamexpect.Searcher._check_type">
+<code class="descname">_check_type</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#Searcher._check_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.Searcher._check_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that <em>value</em> matches the type of this <em>Searcher</em>.</p>
+<p>Checks that <em>value</em> matches the type of this <em>Searcher</em>, returning the
+value if it does and raising a <cite>TypeError</cite> if it does not.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><em>value</em> if type of <em>value</em> matches type of this <em>Searcher</em>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><strong>TypeError</strong> &#8211; if type of <em>value</em> does not match the type of this
+<em>Searcher</em></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="streamexpect.Searcher.match_type">
+<code class="descname">match_type</code><a class="headerlink" href="#streamexpect.Searcher.match_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read-only property that returns type matched by this <em>Searcher</em></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="streamexpect.Searcher.search">
+<code class="descname">search</code><span class="sig-paren">(</span><em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#Searcher.search"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.Searcher.search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search the provided buffer for a <em>match</em>.</p>
+<p>Search the provided buffer for a <em>match</em>. What exactly a <em>match</em> means
+is defined by the <em>Searcher</em> implementation. If the <em>match</em> is found,
+returns an <cite>SequenceMatch</cite> object, otherwise returns <code class="docutils literal"><span class="pre">None</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>buf</strong> &#8211; Buffer to search for a match.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="streamexpect.BytesSearcher">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">BytesSearcher</code><span class="sig-paren">(</span><em>b</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#BytesSearcher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.BytesSearcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Binary/ASCII searcher.</p>
+<p>A binary/ASCII searcher. Matches when the pattern passed to the
+constructor is found in the input buffer.</p>
+<p>Note that this class only operates on binary types. That means that in
+Python 3, it will fail on strings, as strings are Unicode by default. In
+Python 2 this class will fail on the Unicode type, as strings are ASCII by
+default.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>b</strong> &#8211; Bytes to search for. Must be a binary type (i.e. bytes)</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="streamexpect.BytesSearcher.search">
+<code class="descname">search</code><span class="sig-paren">(</span><em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#BytesSearcher.search"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.BytesSearcher.search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search the provided buffer for matching bytes.</p>
+<p>Search the provided buffer for matching bytes. If the <em>match</em> is found,
+returns a <a class="reference internal" href="#streamexpect.SequenceMatch" title="streamexpect.SequenceMatch"><code class="xref py py-class docutils literal"><span class="pre">SequenceMatch</span></code></a> object, otherwise returns <code class="docutils literal"><span class="pre">None</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>buf</strong> &#8211; Buffer to search for a match.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="#streamexpect.SequenceMatch" title="streamexpect.SequenceMatch"><code class="xref py py-class docutils literal"><span class="pre">SequenceMatch</span></code></a> if matched, None if no match was found.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="streamexpect.TextSearcher">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">TextSearcher</code><span class="sig-paren">(</span><em>text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#TextSearcher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.TextSearcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plain text searcher.</p>
+<p>A plain-text searcher. Matches when the text passed to the constructor is
+found in the input buffer.</p>
+<p>Note that this class operates only on text types (i.e. Unicode) and raises
+a TypeError if used with binary data. Use the <a class="reference internal" href="#streamexpect.BytesSearcher" title="streamexpect.BytesSearcher"><code class="xref py py-class docutils literal"><span class="pre">BytesSearcher</span></code></a> type
+to search binary or ASCII text.</p>
+<p>To make sure that modified (accented, grave, etc.) characters are matched
+accurately, the input text is converted to the Unicode canonical composed
+form before being used to match.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>text</strong> &#8211; Text to search for. Must be a text type (i.e. Unicode)</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="streamexpect.TextSearcher.search">
+<code class="descname">search</code><span class="sig-paren">(</span><em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#TextSearcher.search"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.TextSearcher.search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search the provided buffer for matching text.</p>
+<p>Search the provided buffer for matching text. If the <em>match</em> is found,
+returns a <a class="reference internal" href="#streamexpect.SequenceMatch" title="streamexpect.SequenceMatch"><code class="xref py py-class docutils literal"><span class="pre">SequenceMatch</span></code></a> object, otherwise returns <code class="docutils literal"><span class="pre">None</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>buf</strong> &#8211; Buffer to search for a match.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="#streamexpect.SequenceMatch" title="streamexpect.SequenceMatch"><code class="xref py py-class docutils literal"><span class="pre">SequenceMatch</span></code></a> if matched, None if no match was found.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="streamexpect.RegexSearcher">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">RegexSearcher</code><span class="sig-paren">(</span><em>pattern</em>, <em>regex_options=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#RegexSearcher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.RegexSearcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Regular expression searcher.</p>
+<p>Searches for a match in the stream that matches the provided regular
+expression.</p>
+<p>This class follows the Python 3 model for dealing with binary versus text
+patterns, raising a <cite>TypeError</cite> if mixed binary/text is used. This means
+that a <em>RegexSearcher</em> that is instantiated with binary data will raise a
+<cite>TypeError</cite> if used on text, and a <em>RegexSearcher</em> instantiated with text
+will raise a <cite>TypeError</cite> on binary data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pattern</strong> &#8211; The regex to search for, as a single compiled regex
+or a string that will be processed as a regex.</li>
+<li><strong>regex_options</strong> &#8211; Options passed to the regex engine.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="streamexpect.RegexSearcher.search">
+<code class="descname">search</code><span class="sig-paren">(</span><em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#RegexSearcher.search"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.RegexSearcher.search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search the provided buffer for a match to the object&#8217;s regex.</p>
+<p>Search the provided buffer for a match to the object&#8217;s regex. If the
+<em>match</em> is found, returns a <a class="reference internal" href="#streamexpect.RegexMatch" title="streamexpect.RegexMatch"><code class="xref py py-class docutils literal"><span class="pre">RegexMatch</span></code></a> object, otherwise
+returns <code class="docutils literal"><span class="pre">None</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>buf</strong> &#8211; Buffer to search for a match.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="#streamexpect.RegexMatch" title="streamexpect.RegexMatch"><code class="xref py py-class docutils literal"><span class="pre">RegexMatch</span></code></a> if matched, None if no match was found.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="streamexpect.SearcherCollection">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">SearcherCollection</code><span class="sig-paren">(</span><em>*searchers</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#SearcherCollection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.SearcherCollection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Collect multiple <cite>Searcher</cite> objects into one.</p>
+<p>Collect multiple <cite>Searcher</cite> instances into a single <cite>Searcher</cite> instance.
+This is different than simply looping over a list of searchers, as this
+class will always find the earliest match from any of its sub-searchers
+(i.e. the match with the smallest index).</p>
+<p>Note that this class requires that all of its sub-searchers have the same
+<em>match_type</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>searchers</strong> &#8211; One or more <a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><code class="xref py py-class docutils literal"><span class="pre">Searcher</span></code></a> implementations.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="streamexpect.SearcherCollection.search">
+<code class="descname">search</code><span class="sig-paren">(</span><em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#SearcherCollection.search"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.SearcherCollection.search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search the provided buffer for a match to any sub-searchers.</p>
+<p>Search the provided buffer for a match to any of this collection&#8217;s
+sub-searchers. If a single matching sub-searcher is found, returns that
+sub-searcher&#8217;s <em>match</em> object. If multiple matches are found, the match
+with the smallest index is returned. If no matches are found, returns
+<code class="docutils literal"><span class="pre">None</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>buf</strong> &#8211; Buffer to search for a match.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="#streamexpect.RegexMatch" title="streamexpect.RegexMatch"><code class="xref py py-class docutils literal"><span class="pre">RegexMatch</span></code></a> if matched, None if no match was found.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="match-types">
+<h2><a class="toc-backref" href="#id5">Match types</a><a class="headerlink" href="#match-types" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#streamexpect.SequenceMatch" title="streamexpect.SequenceMatch"><code class="xref py py-obj docutils literal"><span class="pre">SequenceMatch</span></code></a>(searcher,&nbsp;match,&nbsp;start,&nbsp;end)</td>
+<td>Information about a match that has a concept of ordering.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#streamexpect.RegexMatch" title="streamexpect.RegexMatch"><code class="xref py py-obj docutils literal"><span class="pre">RegexMatch</span></code></a>(searcher,&nbsp;match,&nbsp;start,&nbsp;end,&nbsp;groups)</td>
+<td>Information about a match from a regex.</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="streamexpect.SequenceMatch">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">SequenceMatch</code><span class="sig-paren">(</span><em>searcher</em>, <em>match</em>, <em>start</em>, <em>end</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#SequenceMatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.SequenceMatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Information about a match that has a concept of ordering.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>searcher</strong> (<a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><em>Searcher</em></a>) &#8211; The <a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><code class="xref py py-class docutils literal"><span class="pre">Searcher</span></code></a> that found the match</li>
+<li><strong>match</strong> &#8211; Portion of sequence that triggered the match</li>
+<li><strong>start</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Index of start of match</li>
+<li><strong>end</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Index of item directly after match</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="streamexpect.RegexMatch">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">RegexMatch</code><span class="sig-paren">(</span><em>searcher</em>, <em>match</em>, <em>start</em>, <em>end</em>, <em>groups</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#RegexMatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.RegexMatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Information about a match from a regex.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>searcher</strong> (<a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><em>Searcher</em></a>) &#8211; The <a class="reference internal" href="#streamexpect.Searcher" title="streamexpect.Searcher"><code class="xref py py-class docutils literal"><span class="pre">Searcher</span></code></a> that found the match</li>
+<li><strong>match</strong> &#8211; Portion of sequence that triggered the match</li>
+<li><strong>start</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Index of start of match</li>
+<li><strong>end</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Index of item directly after match</li>
+<li><strong>groups</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#tuple" title="(in Python v2.7)"><em>tuple</em></a>) &#8211; Contains the matched subgroups if the regex
+contained groups, otherwise <code class="docutils literal"><span class="pre">None</span></code></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="streamadapter-types">
+<h2><a class="toc-backref" href="#id6">StreamAdapter Types</a><a class="headerlink" href="#streamadapter-types" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><code class="xref py py-obj docutils literal"><span class="pre">StreamAdapter</span></code></a>(stream)</td>
+<td>Adapter to match varying stream objects to a single interface.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#streamexpect.PollingStreamAdapter" title="streamexpect.PollingStreamAdapter"><code class="xref py py-obj docutils literal"><span class="pre">PollingStreamAdapter</span></code></a>(stream[,&nbsp;poll_period,&nbsp;...])</td>
+<td>A <a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><code class="xref py py-class docutils literal"><span class="pre">StreamAdapter</span></code></a> that polls a non-blocking stream.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#streamexpect.PollingSocketStreamAdapter" title="streamexpect.PollingSocketStreamAdapter"><code class="xref py py-obj docutils literal"><span class="pre">PollingSocketStreamAdapter</span></code></a>(sock[,&nbsp;...])</td>
+<td>A <a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><code class="xref py py-class docutils literal"><span class="pre">StreamAdapter</span></code></a> that polls a non-blocking socket.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#streamexpect.PollingStreamAdapterMixin" title="streamexpect.PollingStreamAdapterMixin"><code class="xref py py-obj docutils literal"><span class="pre">PollingStreamAdapterMixin</span></code></a></td>
+<td>Add <em>poll_period</em> and <em>max_read</em> properties to a <cite>StreamAdapter</cite></td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="streamexpect.StreamAdapter">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">StreamAdapter</code><span class="sig-paren">(</span><em>stream</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#StreamAdapter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.StreamAdapter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adapter to match varying stream objects to a single interface.</p>
+<p>Despite the existence of the Python stream interface and file-like objects,
+there are actually a number of subtly different implementations of streams
+within Python. In addition, there are stream-like constructs like sockets
+that use a different interface entirely (<em>send</em>/<em>recv</em> versus
+<em>read</em>/<em>write</em>).</p>
+<p>This class provides a base adapter that can be used to convert anything
+even remotely stream-like into a form that can consistently be used by
+implementations of <cite>Expecter</cite>. The key method is <a class="reference internal" href="#streamexpect.StreamAdapter.poll" title="streamexpect.StreamAdapter.poll"><code class="xref py py-func docutils literal"><span class="pre">poll()</span></code></a>, which must
+<em>always</em> provide a blocking interface to the underlying stream, and must
+<em>also</em> provide a reliable timeout mechanism. The exact method to achieve
+these two goals is implementation dependent, and a particular
+implementation may be used to meet the need at hand.</p>
+<p>This class also automatically delegates any non-existent attributes to the
+underlying stream object. This allows the adapter to be used identically to
+the stream.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>stream</strong> &#8211; Stream object to wrap over.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="streamexpect.StreamAdapter.poll">
+<code class="descname">poll</code><span class="sig-paren">(</span><em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#StreamAdapter.poll"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.StreamAdapter.poll" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unified blocking read access to the underlying stream.</p>
+<p>All subclasses of <a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><code class="xref py py-class docutils literal"><span class="pre">StreamAdapter</span></code></a> must implement this method.
+Once called, the method must either:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Return new read data whenever it becomes available, or</li>
+<li>Raise an <cite>ExpectTimeout</cite> exception if timeout is exceeded.</li>
+</ul>
+</div></blockquote>
+<p>The amount of data to return from each call is implementation
+dependent, but it is important that either all data is returned from
+the function, or that the data be somehow returned to the stream. In
+other words, any data not returned must still be available the next
+time the <cite>poll</cite> method is called.</p>
+<p>Note that there is no &#8220;wait forever&#8221; functionality: either some new
+data must be returned or an exception must occur in a finite amount of
+time. It is also important that, if there is a timeout, the method
+raise the exception as soon after the timeout occurred as is reasonably
+possible.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="streamexpect.PollingStreamAdapter">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">PollingStreamAdapter</code><span class="sig-paren">(</span><em>stream</em>, <em>poll_period=0.1</em>, <em>max_read=1024</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#PollingStreamAdapter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.PollingStreamAdapter" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><code class="xref py py-class docutils literal"><span class="pre">StreamAdapter</span></code></a> that polls a non-blocking stream.</p>
+<p>Polls a non-blocking stream of data until new data is available or a
+timeout is exceeded. It is <em>VERY IMPORTANT</em> that the underlying stream be
+non-blocking.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>stream</strong> &#8211; Stream to poll for data.</li>
+<li><strong>poll_period</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Time (in seconds) between polls of the
+stream.</li>
+<li><strong>max_read</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; The maximum number of bytes/characters to read
+from the stream at one time.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="streamexpect.PollingStreamAdapter.poll">
+<code class="descname">poll</code><span class="sig-paren">(</span><em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#PollingStreamAdapter.poll"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.PollingStreamAdapter.poll" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Timeout in seconds.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="streamexpect.PollingSocketStreamAdapter">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">PollingSocketStreamAdapter</code><span class="sig-paren">(</span><em>sock</em>, <em>poll_period=0.1</em>, <em>max_read=1024</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#PollingSocketStreamAdapter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.PollingSocketStreamAdapter" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#streamexpect.StreamAdapter" title="streamexpect.StreamAdapter"><code class="xref py py-class docutils literal"><span class="pre">StreamAdapter</span></code></a> that polls a non-blocking socket.</p>
+<p>Polls a non-blocking socket for data until new data is available or a
+timeout is exceeded.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sock</strong> &#8211; Socket to poll for data.</li>
+<li><strong>poll_period</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Time (in seconds) between poll of the socket.</li>
+<li><strong>max_read</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; The maximum number of bytes/characters to read
+from the socket at one time.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="streamexpect.PollingSocketStreamAdapter.poll">
+<code class="descname">poll</code><span class="sig-paren">(</span><em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/streamexpect.html#PollingSocketStreamAdapter.poll"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.PollingSocketStreamAdapter.poll" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Timeout in seconds. A timeout that is less than
+the poll_period will still cause a single read that may take up to
+poll_period seconds.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="streamexpect.PollingStreamAdapterMixin">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">PollingStreamAdapterMixin</code><a class="reference internal" href="_modules/streamexpect.html#PollingStreamAdapterMixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.PollingStreamAdapterMixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add <em>poll_period</em> and <em>max_read</em> properties to a <cite>StreamAdapter</cite></p>
+</dd></dl>
+
+</div>
+<div class="section" id="exceptions">
+<h2><a class="toc-backref" href="#id7">Exceptions</a><a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#streamexpect.ExpectTimeout" title="streamexpect.ExpectTimeout"><code class="xref py py-obj docutils literal"><span class="pre">ExpectTimeout</span></code></a></td>
+<td>Exception raised when <em>expect</em> call exceeds a timeout.</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="streamexpect.ExpectTimeout">
+<em class="property">class </em><code class="descclassname">streamexpect.</code><code class="descname">ExpectTimeout</code><a class="reference internal" href="_modules/streamexpect.html#ExpectTimeout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#streamexpect.ExpectTimeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exception raised when <em>expect</em> call exceeds a timeout.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">streamexpect</a></h1>
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=digidotcom&repo=python-streamexpect&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">API Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#expecter-types">Expecter Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#searcher-types">Searcher Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#match-types">Match types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#streamadapter-types">StreamAdapter Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#exceptions">Exceptions</a></li>
+</ul>
+</li>
+</ul>
+
+
+<hr />
+<ul>
+    
+    <li class="toctree-l1"><a href="http://www.digi.com/wds/">Digi Wireless Design</a></li>
+    
+    <li class="toctree-l1"><a href="https://github.com/digidotcom/python-streamexpect">Streamexpect on Github</a></li>
+    
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Digi International, Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+      |
+      <a href="_sources/api.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
