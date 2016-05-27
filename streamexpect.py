@@ -657,14 +657,17 @@ class BytesExpecter(Expecter, ExpectBytesMixin, ExpectRegexMixin):
         """
         timeout = float(timeout)
         end = time.time() + timeout
-        match = None
+        match = searcher.search(self._history)
         while not match:
             # poll() will raise ExpectTimeout if time is exceeded
             incoming = self._stream_adapter.poll(end - time.time())
             self.input_callback(incoming)
             self._history += incoming
             match = searcher.search(self._history)
-            self._history = self._history[(self._window * (-1)):]
+
+        if match:
+            self._history = self._history[(match.end+1):]
+        self._history = self._history[(self._window * (-1)):]
         return match
 
 
