@@ -482,6 +482,22 @@ class TestWrapper(unittest.TestCase):
             source.close()
             drain.close()
 
+    def test_expect_bytes_twice_on_split_buffer_with_small_window(self):
+        source, drain = socket.socketpair()
+        try:
+            wrapper = streamexpect.wrap(drain, unicode=False, window=8)
+            source.sendall(b'tau iota m')
+            match = wrapper.expect_bytes(b'iota')
+            self.assertTrue(match is not None)
+            self.assertEqual(b'iota', match.match)
+            source.sendall(b'u tau iota')
+            match = wrapper.expect_bytes(b'mu')
+            self.assertTrue(match is not None)
+            self.assertEqual(b'mu', match.match)
+        finally:
+            source.close()
+            drain.close()
+
     def test_expect_text_twice_on_one_buffer(self):
         stream = PiecewiseStream(u('tau iota mu'), max_chunk=3)
         wrapper = streamexpect.wrap(stream, unicode=True)
