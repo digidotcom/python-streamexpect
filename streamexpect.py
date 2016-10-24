@@ -641,6 +641,7 @@ class BytesExpecter(Expecter, ExpectBytesMixin, ExpectRegexMixin):
         super(BytesExpecter, self).__init__(stream_adapter, input_callback,
                                             window, close_adapter)
         self._history = six.binary_type()
+        self._start = 0
 
     def expect(self, searcher, timeout=3):
         """Wait for input matching *searcher*
@@ -657,17 +658,23 @@ class BytesExpecter(Expecter, ExpectBytesMixin, ExpectRegexMixin):
         """
         timeout = float(timeout)
         end = time.time() + timeout
-        match = searcher.search(self._history)
+        match = searcher.search(self._history[self._start:])
         while not match:
             # poll() will raise ExpectTimeout if time is exceeded
             incoming = self._stream_adapter.poll(end - time.time())
             self.input_callback(incoming)
             self._history += incoming
-            match = searcher.search(self._history)
+            match = searcher.search(self._history[self._start:])
+            trimlength = len(self._history) - self._window
+            if trimlength > 0:
+                self._start -= trimlength
+                self._history = self._history[trimlength:]
 
         if match:
-            self._history = self._history[(match.end+1):]
-        self._history = self._history[(self._window * (-1)):]
+            self._start += match.end
+        if (self._start < 0):
+            self._start = 0
+
         return match
 
 
@@ -687,6 +694,7 @@ class TextExpecter(Expecter, ExpectTextMixin, ExpectRegexMixin):
         super(TextExpecter, self).__init__(stream_adapter, input_callback,
                                            window, close_adapter)
         self._history = six.text_type()
+        self._start = 0
 
     def expect(self, searcher, timeout=3):
         """Wait for input matching *searcher*.
@@ -703,14 +711,23 @@ class TextExpecter(Expecter, ExpectTextMixin, ExpectRegexMixin):
         """
         timeout = float(timeout)
         end = time.time() + timeout
-        match = None
+        match = searcher.search(self._history[self._start:])
         while not match:
             # poll() will raise ExpectTimeout if time is exceeded
             incoming = self._stream_adapter.poll(end - time.time())
             self.input_callback(incoming)
             self._history += incoming
-            match = searcher.search(self._history)
-            self._history = self._history[(self._window * (-1)):]
+            match = searcher.search(self._history[self._start:])
+            trimlength = len(self._history) - self._window
+            if trimlength > 0:
+                self._start -= trimlength
+                self._history = self._history[trimlength:]
+
+        if match:
+            self._start += match.end
+        if (self._start < 0):
+            self._start = 0
+
         return match
 
 
