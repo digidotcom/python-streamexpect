@@ -498,7 +498,7 @@ class TestWrapper(unittest.TestCase):
             source.close()
             drain.close()
 
-    def test_expect_text_twice_on_one_buffer(self):
+    def test_expect_text_twice(self):
         stream = PiecewiseStream(u('tau iota mu'), max_chunk=3)
         wrapper = streamexpect.wrap(stream, unicode=True)
         match = wrapper.expect_text(u('iota'))
@@ -508,6 +508,16 @@ class TestWrapper(unittest.TestCase):
         self.assertTrue(match is not None)
         self.assertEqual(u('mu'), match.match)
 
+    def test_expect_text_twice_with_small_window(self):
+        stream = PiecewiseStream(u('tau iota mu'), max_chunk=3)
+        wrapper = streamexpect.wrap(stream, unicode=True, window=8)
+        match = wrapper.expect_text(u('iota'))
+        self.assertTrue(match is not None)
+        self.assertEqual(u('iota'), match.match)
+        match = wrapper.expect_text(u('mu'))
+        self.assertTrue(match is not None)
+        self.assertEqual(u('mu'), match.match)
+        
     def test_expect_unicode_regex(self):
         stream = PiecewiseStream(u('pi epsilon mu'), max_chunk=3)
         wrapper = streamexpect.wrap(stream, unicode=True)
