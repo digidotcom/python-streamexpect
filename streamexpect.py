@@ -670,8 +670,7 @@ class BytesExpecter(Expecter, ExpectBytesMixin, ExpectRegexMixin):
                 self._start -= trimlength
                 self._history = self._history[trimlength:]
 
-        if match:
-            self._start += match.end
+        self._start += match.end
         if (self._start < 0):
             self._start = 0
 
@@ -723,8 +722,7 @@ class TextExpecter(Expecter, ExpectTextMixin, ExpectRegexMixin):
                 self._start -= trimlength
                 self._history = self._history[trimlength:]
 
-        if match:
-            self._start += match.end
+        self._start += match.end
         if (self._start < 0):
             self._start = 0
 
