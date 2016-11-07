@@ -1,0 +1,933 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>streamexpect &#8212; streamexpect 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="top" title="streamexpect 0.2.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for streamexpect</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># This Source Code Form is subject to the terms of the Mozilla Public</span>
+<span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
+<span class="c1"># file, You can obtain one at http://mozilla.org/MPL/2.0/.</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2015 Digi International Inc. All Rights Reserved.</span>
+
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">six</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">unicodedata</span>
+
+
+<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;0.2.1&#39;</span>
+
+
+<div class="viewcode-block" id="SequenceMatch"><a class="viewcode-back" href="../api.html#streamexpect.SequenceMatch">[docs]</a><span class="k">class</span> <span class="nc">SequenceMatch</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Information about a match that has a concept of ordering.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">searcher</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param Searcher searcher: The :class:`Searcher` that found the match</span>
+<span class="sd">        :param match: Portion of sequence that triggered the match</span>
+<span class="sd">        :param int start: Index of start of match</span>
+<span class="sd">        :param int end: Index of item directly after match</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">searcher</span> <span class="o">=</span> <span class="n">searcher</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match</span> <span class="o">=</span> <span class="n">match</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">(</span><span class="si">{!r}</span><span class="s1">, match=</span><span class="si">{!r}</span><span class="s1">, start=</span><span class="si">{}</span><span class="s1">, end=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">searcher</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">match</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RegexMatch"><a class="viewcode-back" href="../api.html#streamexpect.RegexMatch">[docs]</a><span class="k">class</span> <span class="nc">RegexMatch</span><span class="p">(</span><span class="n">SequenceMatch</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Information about a match from a regex.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">searcher</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">groups</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param Searcher searcher: The :class:`Searcher` that found the match</span>
+<span class="sd">        :param match: Portion of sequence that triggered the match</span>
+<span class="sd">        :param int start: Index of start of match</span>
+<span class="sd">        :param int end: Index of item directly after match</span>
+<span class="sd">        :param tuple groups: Contains the matched subgroups if the regex</span>
+<span class="sd">            contained groups, otherwise ``None``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RegexMatch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">searcher</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groups</span> <span class="o">=</span> <span class="n">groups</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">(</span><span class="si">{!r}</span><span class="s1">, match=</span><span class="si">{!r}</span><span class="s1">, start=</span><span class="si">{}</span><span class="s1">), end=</span><span class="si">{}</span><span class="s1">, groups=</span><span class="si">{!r}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">searcher</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">match</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ExpectTimeout"><a class="viewcode-back" href="../api.html#streamexpect.ExpectTimeout">[docs]</a><span class="k">class</span> <span class="nc">ExpectTimeout</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception raised when *expect* call exceeds a timeout.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Searcher"><a class="viewcode-back" href="../api.html#streamexpect.Searcher">[docs]</a><span class="k">class</span> <span class="nc">Searcher</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for searching buffers.</span>
+
+<span class="sd">    Implements the base class for *Searcher* types, which are used by the</span>
+<span class="sd">    library to determine whether or not a particular buffer contains a *match*.</span>
+<span class="sd">    The type of the match is determined by the *Searcher* implementation: it</span>
+<span class="sd">    may be bytes, text, or something else entirely.</span>
+
+<span class="sd">    To conform to the *Searcher* interface, a class must implement one method</span>
+<span class="sd">    *search* and one read-only property *match_type*. The buffer passed to</span>
+<span class="sd">    the *search* method must match the type returned by the *match_type*</span>
+<span class="sd">    property, and *search* must raise a `TypeError` if it does not. The</span>
+<span class="sd">    member function :func:`_check_type` exists to provide this functionality</span>
+<span class="sd">    for subclass implementations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">()&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Searcher.search"><a class="viewcode-back" href="../api.html#streamexpect.Searcher.search">[docs]</a>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Search the provided buffer for a *match*.</span>
+
+<span class="sd">        Search the provided buffer for a *match*. What exactly a *match* means</span>
+<span class="sd">        is defined by the *Searcher* implementation. If the *match* is found,</span>
+<span class="sd">        returns an `SequenceMatch` object, otherwise returns ``None``.</span>
+
+<span class="sd">        :param buf: Buffer to search for a match.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;search function must be provided&#39;</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">match_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read-only property that returns type matched by this *Searcher*&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;match_type must be provided&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Searcher._check_type"><a class="viewcode-back" href="../api.html#streamexpect.Searcher._check_type">[docs]</a>    <span class="k">def</span> <span class="nf">_check_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks that *value* matches the type of this *Searcher*.</span>
+
+<span class="sd">        Checks that *value* matches the type of this *Searcher*, returning the</span>
+<span class="sd">        value if it does and raising a `TypeError` if it does not.</span>
+
+<span class="sd">        :return: *value* if type of *value* matches type of this *Searcher*.</span>
+<span class="sd">        :raises TypeError: if type of *value* does not match the type of this</span>
+<span class="sd">            *Searcher*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">match_type</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Type &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39; does not match &#39;</span>
+                            <span class="s1">&#39;expected type &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">match_type</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">value</span></div></div>
+
+
+<div class="viewcode-block" id="BytesSearcher"><a class="viewcode-back" href="../api.html#streamexpect.BytesSearcher">[docs]</a><span class="k">class</span> <span class="nc">BytesSearcher</span><span class="p">(</span><span class="n">Searcher</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Binary/ASCII searcher.</span>
+
+<span class="sd">    A binary/ASCII searcher. Matches when the pattern passed to the</span>
+<span class="sd">    constructor is found in the input buffer.</span>
+
+<span class="sd">    Note that this class only operates on binary types. That means that in</span>
+<span class="sd">    Python 3, it will fail on strings, as strings are Unicode by default. In</span>
+<span class="sd">    Python 2 this class will fail on the Unicode type, as strings are ASCII by</span>
+<span class="sd">    default.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param b: Bytes to search for. Must be a binary type (i.e. bytes)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">(</span><span class="si">{!r}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bytes</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">match_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">six</span><span class="o">.</span><span class="n">binary_type</span>
+
+<div class="viewcode-block" id="BytesSearcher.search"><a class="viewcode-back" href="../api.html#streamexpect.BytesSearcher.search">[docs]</a>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Search the provided buffer for matching bytes.</span>
+
+<span class="sd">        Search the provided buffer for matching bytes. If the *match* is found,</span>
+<span class="sd">        returns a :class:`SequenceMatch` object, otherwise returns ``None``.</span>
+
+<span class="sd">        :param buf: Buffer to search for a match.</span>
+<span class="sd">        :return: :class:`SequenceMatch` if matched, None if no match was found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bytes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">idx</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bytes</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">SequenceMatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">],</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="TextSearcher"><a class="viewcode-back" href="../api.html#streamexpect.TextSearcher">[docs]</a><span class="k">class</span> <span class="nc">TextSearcher</span><span class="p">(</span><span class="n">Searcher</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Plain text searcher.</span>
+
+<span class="sd">    A plain-text searcher. Matches when the text passed to the constructor is</span>
+<span class="sd">    found in the input buffer.</span>
+
+<span class="sd">    Note that this class operates only on text types (i.e. Unicode) and raises</span>
+<span class="sd">    a TypeError if used with binary data. Use the :class:`BytesSearcher` type</span>
+<span class="sd">    to search binary or ASCII text.</span>
+
+<span class="sd">    To make sure that modified (accented, grave, etc.) characters are matched</span>
+<span class="sd">    accurately, the input text is converted to the Unicode canonical composed</span>
+<span class="sd">    form before being used to match.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">FORM</span> <span class="o">=</span> <span class="s1">&#39;NFKC&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param text: Text to search for. Must be a text type (i.e. Unicode)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TextSearcher</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_text</span> <span class="o">=</span> <span class="n">unicodedata</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FORM</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">(</span><span class="si">{!r}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">match_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">six</span><span class="o">.</span><span class="n">text_type</span>
+
+<div class="viewcode-block" id="TextSearcher.search"><a class="viewcode-back" href="../api.html#streamexpect.TextSearcher.search">[docs]</a>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Search the provided buffer for matching text.</span>
+
+<span class="sd">        Search the provided buffer for matching text. If the *match* is found,</span>
+<span class="sd">        returns a :class:`SequenceMatch` object, otherwise returns ``None``.</span>
+
+<span class="sd">        :param buf: Buffer to search for a match.</span>
+<span class="sd">        :return: :class:`SequenceMatch` if matched, None if no match was found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+        <span class="n">normalized</span> <span class="o">=</span> <span class="n">unicodedata</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FORM</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">normalized</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">idx</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SequenceMatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">normalized</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">],</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="RegexSearcher"><a class="viewcode-back" href="../api.html#streamexpect.RegexSearcher">[docs]</a><span class="k">class</span> <span class="nc">RegexSearcher</span><span class="p">(</span><span class="n">Searcher</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Regular expression searcher.</span>
+
+<span class="sd">    Searches for a match in the stream that matches the provided regular</span>
+<span class="sd">    expression.</span>
+
+<span class="sd">    This class follows the Python 3 model for dealing with binary versus text</span>
+<span class="sd">    patterns, raising a `TypeError` if mixed binary/text is used. This means</span>
+<span class="sd">    that a *RegexSearcher* that is instantiated with binary data will raise a</span>
+<span class="sd">    `TypeError` if used on text, and a *RegexSearcher* instantiated with text</span>
+<span class="sd">    will raise a `TypeError` on binary data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">regex_options</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param pattern: The regex to search for, as a single compiled regex</span>
+<span class="sd">            or a string that will be processed as a regex.</span>
+<span class="sd">        :param regex_options: Options passed to the regex engine.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RegexSearcher</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">regex_options</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">(re.compile(</span><span class="si">{!r}</span><span class="s1">))&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">_regex</span><span class="o">.</span><span class="n">pattern</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">match_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_regex</span><span class="o">.</span><span class="n">pattern</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RegexSearcher.search"><a class="viewcode-back" href="../api.html#streamexpect.RegexSearcher.search">[docs]</a>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Search the provided buffer for a match to the object&#39;s regex.</span>
+
+<span class="sd">        Search the provided buffer for a match to the object&#39;s regex. If the</span>
+<span class="sd">        *match* is found, returns a :class:`RegexMatch` object, otherwise</span>
+<span class="sd">        returns ``None``.</span>
+
+<span class="sd">        :param buf: Buffer to search for a match.</span>
+<span class="sd">        :return: :class:`RegexMatch` if matched, None if no match was found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regex</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">buf</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">RegexMatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">],</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span></div></div>
+
+
+<span class="k">def</span> <span class="nf">_flatten</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Recursively flatten a mixed sequence of sub-sequences and items&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Sequence</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">n</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">_flatten</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">y</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">n</span>
+
+
+<div class="viewcode-block" id="SearcherCollection"><a class="viewcode-back" href="../api.html#streamexpect.SearcherCollection">[docs]</a><span class="k">class</span> <span class="nc">SearcherCollection</span><span class="p">(</span><span class="n">Searcher</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Collect multiple `Searcher` objects into one.</span>
+
+<span class="sd">    Collect multiple `Searcher` instances into a single `Searcher` instance.</span>
+<span class="sd">    This is different than simply looping over a list of searchers, as this</span>
+<span class="sd">    class will always find the earliest match from any of its sub-searchers</span>
+<span class="sd">    (i.e. the match with the smallest index).</span>
+
+<span class="sd">    Note that this class requires that all of its sub-searchers have the same</span>
+<span class="sd">    *match_type*.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">searchers</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param searchers: One or more :class:`Searcher` implementations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SearcherCollection</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_flatten</span><span class="p">(</span><span class="n">searchers</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span> <span class="o">+</span> <span class="s1">&#39; requires at least &#39;</span>
+                             <span class="s1">&#39;one sub-searcher to be specified&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Check that all searchers are valid</span>
+        <span class="k">for</span> <span class="n">searcher</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="n">searcher</span><span class="p">,</span> <span class="s1">&#39;search&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;missing required attribute &quot;search&quot;&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="n">searcher</span><span class="p">,</span> <span class="s1">&#39;match_type&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;missing required attribute &quot;match_type&quot;&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Check that all searchers are the same match type</span>
+        <span class="n">match_type</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">match_type</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">match_type</span> <span class="o">==</span> <span class="n">match_type</span><span class="p">,</span> <span class="bp">self</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span> <span class="o">+</span> <span class="s1">&#39; requires that all &#39;</span>
+                             <span class="s1">&#39;sub-searchers implement the same match_type&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_match_type</span> <span class="o">=</span> <span class="n">match_type</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">(</span><span class="si">{!r}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">match_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_type</span>
+
+<div class="viewcode-block" id="SearcherCollection.search"><a class="viewcode-back" href="../api.html#streamexpect.SearcherCollection.search">[docs]</a>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Search the provided buffer for a match to any sub-searchers.</span>
+
+<span class="sd">        Search the provided buffer for a match to any of this collection&#39;s</span>
+<span class="sd">        sub-searchers. If a single matching sub-searcher is found, returns that</span>
+<span class="sd">        sub-searcher&#39;s *match* object. If multiple matches are found, the match</span>
+<span class="sd">        with the smallest index is returned. If no matches are found, returns</span>
+<span class="sd">        ``None``.</span>
+
+<span class="sd">        :param buf: Buffer to search for a match.</span>
+<span class="sd">        :return: :class:`RegexMatch` if matched, None if no match was found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+        <span class="n">best_match</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">best_index</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span>
+        <span class="k">for</span> <span class="n">searcher</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">searcher</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span> <span class="ow">and</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span> <span class="o">&lt;</span> <span class="n">best_index</span><span class="p">:</span>
+                <span class="n">best_match</span> <span class="o">=</span> <span class="n">match</span>
+                <span class="n">best_index</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span>
+        <span class="k">return</span> <span class="n">best_match</span></div></div>
+
+
+<div class="viewcode-block" id="StreamAdapter"><a class="viewcode-back" href="../api.html#streamexpect.StreamAdapter">[docs]</a><span class="k">class</span> <span class="nc">StreamAdapter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Adapter to match varying stream objects to a single interface.</span>
+
+<span class="sd">    Despite the existence of the Python stream interface and file-like objects,</span>
+<span class="sd">    there are actually a number of subtly different implementations of streams</span>
+<span class="sd">    within Python. In addition, there are stream-like constructs like sockets</span>
+<span class="sd">    that use a different interface entirely (*send*/*recv* versus</span>
+<span class="sd">    *read*/*write*).</span>
+
+<span class="sd">    This class provides a base adapter that can be used to convert anything</span>
+<span class="sd">    even remotely stream-like into a form that can consistently be used by</span>
+<span class="sd">    implementations of `Expecter`. The key method is :func:`poll`, which must</span>
+<span class="sd">    *always* provide a blocking interface to the underlying stream, and must</span>
+<span class="sd">    *also* provide a reliable timeout mechanism. The exact method to achieve</span>
+<span class="sd">    these two goals is implementation dependent, and a particular</span>
+<span class="sd">    implementation may be used to meet the need at hand.</span>
+
+<span class="sd">    This class also automatically delegates any non-existent attributes to the</span>
+<span class="sd">    underlying stream object. This allows the adapter to be used identically to</span>
+<span class="sd">    the stream.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;:param stream: Stream object to wrap over.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="n">stream</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">(</span><span class="si">{!r}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">)</span>
+
+<div class="viewcode-block" id="StreamAdapter.poll"><a class="viewcode-back" href="../api.html#streamexpect.StreamAdapter.poll">[docs]</a>    <span class="k">def</span> <span class="nf">poll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unified blocking read access to the underlying stream.</span>
+
+<span class="sd">        All subclasses of :class:`StreamAdapter` must implement this method.</span>
+<span class="sd">        Once called, the method must either:</span>
+
+<span class="sd">          - Return new read data whenever it becomes available, or</span>
+<span class="sd">          - Raise an `ExpectTimeout` exception if timeout is exceeded.</span>
+
+<span class="sd">        The amount of data to return from each call is implementation</span>
+<span class="sd">        dependent, but it is important that either all data is returned from</span>
+<span class="sd">        the function, or that the data be somehow returned to the stream. In</span>
+<span class="sd">        other words, any data not returned must still be available the next</span>
+<span class="sd">        time the `poll` method is called.</span>
+
+<span class="sd">        Note that there is no &quot;wait forever&quot; functionality: either some new</span>
+<span class="sd">        data must be returned or an exception must occur in a finite amount of</span>
+<span class="sd">        time. It is also important that, if there is a timeout, the method</span>
+<span class="sd">        raise the exception as soon after the timeout occurred as is reasonably</span>
+<span class="sd">        possible.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span> <span class="o">+</span>
+                                  <span class="s1">&#39;.poll must be implemented&#39;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="PollingStreamAdapterMixin"><a class="viewcode-back" href="../api.html#streamexpect.PollingStreamAdapterMixin">[docs]</a><span class="k">class</span> <span class="nc">PollingStreamAdapterMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add *poll_period* and *max_read* properties to a `StreamAdapter`&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">poll_period</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poll_period</span>
+
+    <span class="nd">@poll_period</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">poll_period</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;poll_period must be greater than 0&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_poll_period</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">max_read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_read</span>
+
+    <span class="nd">@max_read</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">max_read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;max_read must be greater than or equal to 0&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_read</span> <span class="o">=</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="PollingStreamAdapter"><a class="viewcode-back" href="../api.html#streamexpect.PollingStreamAdapter">[docs]</a><span class="k">class</span> <span class="nc">PollingStreamAdapter</span><span class="p">(</span><span class="n">StreamAdapter</span><span class="p">,</span> <span class="n">PollingStreamAdapterMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A :class:`StreamAdapter` that polls a non-blocking stream.</span>
+
+<span class="sd">    Polls a non-blocking stream of data until new data is available or a</span>
+<span class="sd">    timeout is exceeded. It is *VERY IMPORTANT* that the underlying stream be</span>
+<span class="sd">    non-blocking.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">poll_period</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">max_read</span><span class="o">=</span><span class="mi">1024</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param stream: Stream to poll for data.</span>
+<span class="sd">        :param float poll_period: Time (in seconds) between polls of the</span>
+<span class="sd">            stream.</span>
+<span class="sd">        :param int max_read: The maximum number of bytes/characters to read</span>
+<span class="sd">            from the stream at one time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PollingStreamAdapter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poll_period</span> <span class="o">=</span> <span class="n">poll_period</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_read</span> <span class="o">=</span> <span class="n">max_read</span>
+
+<div class="viewcode-block" id="PollingStreamAdapter.poll"><a class="viewcode-back" href="../api.html#streamexpect.PollingStreamAdapter.poll">[docs]</a>    <span class="k">def</span> <span class="nf">poll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param float timeout: Timeout in seconds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># Keep reading until data is received or timeout</span>
+            <span class="n">incoming</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_read</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">incoming</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">incoming</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">end_time</span> <span class="o">-</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ExpectTimeout</span><span class="p">()</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_poll_period</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="PollingSocketStreamAdapter"><a class="viewcode-back" href="../api.html#streamexpect.PollingSocketStreamAdapter">[docs]</a><span class="k">class</span> <span class="nc">PollingSocketStreamAdapter</span><span class="p">(</span><span class="n">StreamAdapter</span><span class="p">,</span> <span class="n">PollingStreamAdapterMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A :class:`StreamAdapter` that polls a non-blocking socket.</span>
+
+<span class="sd">    Polls a non-blocking socket for data until new data is available or a</span>
+<span class="sd">    timeout is exceeded.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">poll_period</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">max_read</span><span class="o">=</span><span class="mi">1024</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param sock: Socket to poll for data.</span>
+<span class="sd">        :param float poll_period: Time (in seconds) between poll of the socket.</span>
+<span class="sd">        :param int max_read: The maximum number of bytes/characters to read</span>
+<span class="sd">            from the socket at one time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PollingSocketStreamAdapter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">sock</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poll_period</span> <span class="o">=</span> <span class="n">poll_period</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_read</span> <span class="o">=</span> <span class="n">max_read</span>
+
+<div class="viewcode-block" id="PollingSocketStreamAdapter.poll"><a class="viewcode-back" href="../api.html#streamexpect.PollingSocketStreamAdapter.poll">[docs]</a>    <span class="k">def</span> <span class="nf">poll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param float timeout: Timeout in seconds. A timeout that is less than</span>
+<span class="sd">            the poll_period will still cause a single read that may take up to</span>
+<span class="sd">            poll_period seconds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">now</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="n">prev_timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">gettimeout</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">settimeout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_poll_period</span><span class="p">)</span>
+        <span class="n">incoming</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="p">(</span><span class="n">end_time</span> <span class="o">-</span> <span class="n">now</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">incoming</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_read</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">timeout</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">if</span> <span class="n">incoming</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">incoming</span>
+                <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="n">ExpectTimeout</span><span class="p">()</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">settimeout</span><span class="p">(</span><span class="n">prev_timeout</span><span class="p">)</span></div></div>
+
+
+<span class="k">class</span> <span class="nc">ExpectBytesMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">expect_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wait for a match to the bytes in *b* to appear on the stream.</span>
+
+<span class="sd">        Waits for input matching the bytes *b* for up to *timeout* seconds.</span>
+<span class="sd">        If a match is found, a :class:`SequenceMatch` result is returned.  If</span>
+<span class="sd">        no match is found within *timeout* seconds, raise an</span>
+<span class="sd">        :class:`ExpectTimeout` exception.</span>
+
+<span class="sd">        :param b: The byte pattern to search for.</span>
+<span class="sd">        :param float timeout: Timeout in seconds.</span>
+<span class="sd">        :return: :class:`SequenceMatch` if matched, None if no match was found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">expect</span><span class="p">(</span><span class="n">BytesSearcher</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="n">timeout</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ExpectTextMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">expect_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wait for a match to the text in *text* to appear on the stream.</span>
+
+<span class="sd">        Waits for input matching the text *text* for up to *timeout*</span>
+<span class="sd">        seconds. If a match is found, a :class:`SequenceMatch` result is</span>
+<span class="sd">        returned.  If no match is found within *timeout* seconds, raise an</span>
+<span class="sd">        :class:`ExpectTimeout` exception.</span>
+
+<span class="sd">        :param text: The plain-text pattern to search for.</span>
+<span class="sd">        :param float timeout: Timeout in seconds.</span>
+<span class="sd">        :return: :class:`SequenceMatch` if matched, None if no match was found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">expect</span><span class="p">(</span><span class="n">TextSearcher</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">timeout</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ExpectRegexMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">expect_regex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">regex_options</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wait for a match to the regex in *pattern* to appear on the stream.</span>
+
+<span class="sd">        Waits for input matching the regex *pattern* for up to *timeout*</span>
+<span class="sd">        seconds. If a match is found, a :class:`RegexMatch` result is returned.</span>
+<span class="sd">        If no match is found within *timeout* seconds, raise an</span>
+<span class="sd">        :class:`ExpectTimeout` exception.</span>
+
+<span class="sd">        :param pattern: The pattern to search for, as a single compiled regex</span>
+<span class="sd">            or a string that will be processed as a regex.</span>
+<span class="sd">        :param float timeout: Timeout in seconds.</span>
+<span class="sd">        :param regex_options: Options passed to the regex engine.</span>
+<span class="sd">        :return: :class:`RegexMatch` if matched, None if no match was found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">expect</span><span class="p">(</span><span class="n">RegexSearcher</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">regex_options</span><span class="p">),</span> <span class="n">timeout</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Expecter"><a class="viewcode-back" href="../api.html#streamexpect.Expecter">[docs]</a><span class="k">class</span> <span class="nc">Expecter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for consuming input and waiting for a pattern to appear.</span>
+
+<span class="sd">    Implements the base class for *Expecter* types, which wrap over a</span>
+<span class="sd">    :class:`StreamAdapter` type and provide methods for applying a</span>
+<span class="sd">    :class:`Searcher` to the received data. Any attributes not part of this</span>
+<span class="sd">    class are delegated to the underlying :class:`StreamAdapter` type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream_adapter</span><span class="p">,</span> <span class="n">input_callback</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">close_adapter</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param StreamAdapter stream_adapter: The :class:`StreamAdapter` object</span>
+<span class="sd">            to receive data from.</span>
+<span class="sd">        :param function input_callback: Callback function with one parameter</span>
+<span class="sd">            that is called each time new data is read from the</span>
+<span class="sd">            *stream_adapter*.</span>
+<span class="sd">        :param int window: Number of historical objects (bytes, characters,</span>
+<span class="sd">            etc.) to buffer.</span>
+<span class="sd">        :param bool close_adapter: If ``True``, and the Expecter is used as a</span>
+<span class="sd">            context manager, closes the adapter at the end of the context</span>
+<span class="sd">            manager.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream_adapter</span> <span class="o">=</span> <span class="n">stream_adapter</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">input_callback</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_callback</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_callback</span> <span class="o">=</span> <span class="n">input_callback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window</span> <span class="o">=</span> <span class="n">window</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_adapter</span> <span class="o">=</span> <span class="n">close_adapter</span>
+
+    <span class="c1"># Delegate undefined methods to underlying stream</span>
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stream_adapter</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">close_adapter</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stream_adapter</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">stream_adapter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stream_adapter</span>
+
+    <span class="nd">@stream_adapter</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">stream_adapter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;poll&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;stream_adapter must define &quot;poll&quot; method&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stream_adapter</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_window</span>
+
+    <span class="nd">@window</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;window must be at least 1&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_window</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="Expecter.expect"><a class="viewcode-back" href="../api.html#streamexpect.Expecter.expect">[docs]</a>    <span class="k">def</span> <span class="nf">expect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">searcher</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Apply *searcher* to underlying :class:`StreamAdapter`</span>
+
+<span class="sd">        :param Searcher searcher: :class:`Searcher` to apply to underlying</span>
+<span class="sd">            stream.</span>
+<span class="sd">        :param float timeout: Timeout in seconds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Expecter must implement &quot;expect&quot;&#39;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="BytesExpecter"><a class="viewcode-back" href="../api.html#streamexpect.BytesExpecter">[docs]</a><span class="k">class</span> <span class="nc">BytesExpecter</span><span class="p">(</span><span class="n">Expecter</span><span class="p">,</span> <span class="n">ExpectBytesMixin</span><span class="p">,</span> <span class="n">ExpectRegexMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;:class:`Expecter` interface for searching a byte-oriented stream.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream_adapter</span><span class="p">,</span> <span class="n">input_callback</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+                 <span class="n">close_adapter</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param StreamAdapter stream_adapter: The :class:`StreamAdapter` object</span>
+<span class="sd">            to receive data from.</span>
+<span class="sd">        :param function input_callback: Callback function with one parameter</span>
+<span class="sd">            that is called each time new data is read from the</span>
+<span class="sd">            *stream_adapter*.</span>
+<span class="sd">        :param int window: Number of historical bytes to buffer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BytesExpecter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">stream_adapter</span><span class="p">,</span> <span class="n">input_callback</span><span class="p">,</span>
+                                            <span class="n">window</span><span class="p">,</span> <span class="n">close_adapter</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_history</span> <span class="o">=</span> <span class="n">six</span><span class="o">.</span><span class="n">binary_type</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="BytesExpecter.expect"><a class="viewcode-back" href="../api.html#streamexpect.BytesExpecter.expect">[docs]</a>    <span class="k">def</span> <span class="nf">expect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">searcher</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wait for input matching *searcher*</span>
+
+<span class="sd">        Waits for input matching *searcher* for up to *timeout* seconds. If</span>
+<span class="sd">        a match is found, the match result is returned (the specific type of</span>
+<span class="sd">        returned result depends on the :class:`Searcher` type). If no match is</span>
+<span class="sd">        found within *timeout* seconds, raise an :class:`ExpectTimeout`</span>
+<span class="sd">        exception.</span>
+
+<span class="sd">        :param Searcher searcher: :class:`Searcher` to apply to underlying</span>
+<span class="sd">            stream.</span>
+<span class="sd">        :param float timeout: Timeout in seconds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">searcher</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">:])</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+            <span class="c1"># poll() will raise ExpectTimeout if time is exceeded</span>
+            <span class="n">incoming</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stream_adapter</span><span class="o">.</span><span class="n">poll</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_callback</span><span class="p">(</span><span class="n">incoming</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_history</span> <span class="o">+=</span> <span class="n">incoming</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">searcher</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">:])</span>
+            <span class="n">trimlength</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_window</span>
+            <span class="k">if</span> <span class="n">trimlength</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">-=</span> <span class="n">trimlength</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="p">[</span><span class="n">trimlength</span><span class="p">:]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">+=</span> <span class="n">match</span><span class="o">.</span><span class="n">end</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="n">match</span></div></div>
+
+
+<div class="viewcode-block" id="TextExpecter"><a class="viewcode-back" href="../api.html#streamexpect.TextExpecter">[docs]</a><span class="k">class</span> <span class="nc">TextExpecter</span><span class="p">(</span><span class="n">Expecter</span><span class="p">,</span> <span class="n">ExpectTextMixin</span><span class="p">,</span> <span class="n">ExpectRegexMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;:class:`Expecter` interface for searching a text-oriented stream.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream_adapter</span><span class="p">,</span> <span class="n">input_callback</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+                 <span class="n">close_adapter</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param StreamAdapter stream_adapter: The :class:`StreamAdapter` object</span>
+<span class="sd">            to receive data from.</span>
+<span class="sd">        :param function input_callback: Callback function with one parameter</span>
+<span class="sd">            that is called each time new data is read from the</span>
+<span class="sd">            *stream_adapter*.</span>
+<span class="sd">        :param int window: Number of historical characters to buffer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TextExpecter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">stream_adapter</span><span class="p">,</span> <span class="n">input_callback</span><span class="p">,</span>
+                                           <span class="n">window</span><span class="p">,</span> <span class="n">close_adapter</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_history</span> <span class="o">=</span> <span class="n">six</span><span class="o">.</span><span class="n">text_type</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="TextExpecter.expect"><a class="viewcode-back" href="../api.html#streamexpect.TextExpecter.expect">[docs]</a>    <span class="k">def</span> <span class="nf">expect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">searcher</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wait for input matching *searcher*.</span>
+
+<span class="sd">        Waits for input matching *searcher* for up to *timeout* seconds. If</span>
+<span class="sd">        a match is found, the match result is returned (the specific type of</span>
+<span class="sd">        returned result depends on the :class:`Searcher` type). If no match is</span>
+<span class="sd">        found within *timeout* seconds, raise an :class:`ExpectTimeout`</span>
+<span class="sd">        exception.</span>
+
+<span class="sd">        :param Searcher searcher: :class:`Searcher` to apply to underlying</span>
+<span class="sd">            stream.</span>
+<span class="sd">        :param float timeout: Timeout in seconds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">searcher</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">:])</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+            <span class="c1"># poll() will raise ExpectTimeout if time is exceeded</span>
+            <span class="n">incoming</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stream_adapter</span><span class="o">.</span><span class="n">poll</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_callback</span><span class="p">(</span><span class="n">incoming</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_history</span> <span class="o">+=</span> <span class="n">incoming</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">searcher</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">:])</span>
+            <span class="n">trimlength</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_window</span>
+            <span class="k">if</span> <span class="n">trimlength</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">-=</span> <span class="n">trimlength</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="p">[</span><span class="n">trimlength</span><span class="p">:]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">+=</span> <span class="n">match</span><span class="o">.</span><span class="n">end</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="n">match</span></div></div>
+
+
+<span class="k">def</span> <span class="nf">_echo_text</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_echo_bytes</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;backslashreplace&#39;</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="wrap"><a class="viewcode-back" href="../api.html#streamexpect.wrap">[docs]</a><span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">unicode</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">echo</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">close_stream</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Wrap a stream to implement expect functionality.</span>
+
+<span class="sd">    This function provides a convenient way to wrap any Python stream (a</span>
+<span class="sd">    file-like object) or socket with an appropriate :class:`Expecter` class for</span>
+<span class="sd">    the stream type. The returned object adds an :func:`Expect.expect` method</span>
+<span class="sd">    to the stream, while passing normal stream functions like *read*/*recv*</span>
+<span class="sd">    and *write*/*send* through to the underlying stream.</span>
+
+<span class="sd">    Here&#39;s an example of opening and wrapping a pair of network sockets::</span>
+
+<span class="sd">        import socket</span>
+<span class="sd">        import streamexpect</span>
+
+<span class="sd">        source, drain = socket.socketpair()</span>
+<span class="sd">        expecter = streamexpect.wrap(drain)</span>
+<span class="sd">        source.sendall(b&#39;this is a test&#39;)</span>
+<span class="sd">        match = expecter.expect_bytes(b&#39;test&#39;, timeout=5)</span>
+
+<span class="sd">        assert match is not None</span>
+
+<span class="sd">    :param stream: The stream/socket to wrap.</span>
+<span class="sd">    :param bool unicode: If ``True``, the wrapper will be configured for</span>
+<span class="sd">        Unicode matching, otherwise matching will be done on binary.</span>
+<span class="sd">    :param int window: Historical characters to buffer.</span>
+<span class="sd">    :param bool echo: If ``True``, echoes received characters to stdout.</span>
+<span class="sd">    :param bool close_stream: If ``True``, and the wrapper is used as a context</span>
+<span class="sd">        manager, closes the stream at the end of the context manager.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="s1">&#39;read&#39;</span><span class="p">):</span>
+        <span class="n">proxy</span> <span class="o">=</span> <span class="n">PollingStreamAdapter</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="s1">&#39;recv&#39;</span><span class="p">):</span>
+        <span class="n">proxy</span> <span class="o">=</span> <span class="n">PollingSocketStreamAdapter</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;stream must have either read or recv method&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">echo</span> <span class="ow">and</span> <span class="n">unicode</span><span class="p">:</span>
+        <span class="n">callback</span> <span class="o">=</span> <span class="n">_echo_text</span>
+    <span class="k">elif</span> <span class="n">echo</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">unicode</span><span class="p">:</span>
+        <span class="n">callback</span> <span class="o">=</span> <span class="n">_echo_bytes</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">callback</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">unicode</span><span class="p">:</span>
+        <span class="n">expecter</span> <span class="o">=</span> <span class="n">TextExpecter</span><span class="p">(</span><span class="n">proxy</span><span class="p">,</span> <span class="n">input_callback</span><span class="o">=</span><span class="n">callback</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">,</span>
+                                <span class="n">close_adapter</span><span class="o">=</span><span class="n">close_stream</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">expecter</span> <span class="o">=</span> <span class="n">BytesExpecter</span><span class="p">(</span><span class="n">proxy</span><span class="p">,</span> <span class="n">input_callback</span><span class="o">=</span><span class="n">callback</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">,</span>
+                                 <span class="n">close_adapter</span><span class="o">=</span><span class="n">close_stream</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">expecter</span></div>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># Functions</span>
+    <span class="s1">&#39;wrap&#39;</span><span class="p">,</span>
+
+    <span class="c1"># Expecter types</span>
+    <span class="s1">&#39;Expecter&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;BytesExpecter&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;TextExpecter&#39;</span><span class="p">,</span>
+
+    <span class="c1"># Searcher types</span>
+    <span class="s1">&#39;Searcher&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;BytesSearcher&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;TextSearcher&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;RegexSearcher&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SearcherCollection&#39;</span><span class="p">,</span>
+
+    <span class="c1"># Match types</span>
+    <span class="s1">&#39;SequenceMatch&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;RegexMatch&#39;</span><span class="p">,</span>
+
+    <span class="c1"># StreamAdapter types</span>
+    <span class="s1">&#39;StreamAdapter&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PollingStreamAdapter&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PollingSocketStreamAdapter&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PollingStreamAdapterMixin&#39;</span><span class="p">,</span>
+
+    <span class="c1"># Exceptions</span>
+    <span class="s1">&#39;ExpectTimeout&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">streamexpect</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=digidotcom&repo=python-streamexpect&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Documentation</a></li>
+</ul>
+
+
+<hr />
+<ul>
+    
+    <li class="toctree-l1"><a href="https://github.com/digidotcom/python-streamexpect">Streamexpect on Github</a></li>
+    
+    <li class="toctree-l1"><a href="http://www.digi.com/wds/">Digi Wireless Design</a></li>
+    
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Digi International, Inc..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.8</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
