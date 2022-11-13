@@ -5,7 +5,11 @@
 #
 # Copyright (c) 2015 Digi International Inc. All Rights Reserved.
 
-import collections
+try:
+    from collections.abc import Sequence
+except ImportError:
+    # For backward compatibility with Python2
+    from collections import Sequence
 import re
 import six
 import socket
@@ -258,7 +262,7 @@ class RegexSearcher(Searcher):
 
 def _flatten(n):
     """Recursively flatten a mixed sequence of sub-sequences and items"""
-    if isinstance(n, collections.Sequence):
+    if isinstance(n, Sequence):
         for x in n:
             for y in _flatten(x):
                 yield y

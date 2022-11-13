@@ -36,20 +36,14 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Software Development :: Libraries',
     ],
     py_modules=['streamexpect'],
     install_requires=[
         'six>=1.10'
     ],
-    test_suite='nose.collector',
-    tests_require=[
-        'testfixtures>=4.1',
-    ],
-    setup_requires=[
-        'nose>=1.3',
-        'coverage>=4.0',
-        'setuptools-markdown>=0.1',
-    ],
-    long_description_markdown_filename='README.md',
+    long_description=open("README.md", "r").read(),
+    long_description_content_type='text/markdown'
 )
