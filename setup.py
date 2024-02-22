@@ -22,8 +22,8 @@ setup(
     version=read_version('streamexpect.py'),
     url='https://github.com/digidotcom/python-streamexpect',
     description='expect-like tools over a Python stream',
-    author='Nick Stevens',
-    author_email='nick.stevens@digi.com',
+    author='Digi International Inc.',
+    author_email='noreply@digi.com',
     keywords='expect pexpect search stream serial pyserial socket',
     classifiers=[
         'Development Status :: 3 - Alpha',
